@@ -1,4 +1,7 @@
 
+`:=` <- rlang::`:=`
+
+
 # Request perform ----
 
 cto_perform <- function(req, ...) {
@@ -22,14 +25,14 @@ cto_body_json <- function(resp, ...) {
 gen_regex_varname <- function(name, rpt_lvl, multi) {
   if (rpt_lvl == 0) {
     if (multi) {
-      return(paste0("^", name, "_*\\d+", "$"))
+      return(paste0("^", name, "_*[0-9]+", "$"))
     } else {
       return(paste0("^", name, "$"))
     }
   } else {
-    rpt <- strrep("_\\d+", rpt_lvl)
+    rpt <- strrep("_[0-9]+", rpt_lvl)
     if (multi) {
-      return(paste0("^", name, "_*\\d+", rpt, "$"))
+      return(paste0("^", name, "_*[0-9]+", rpt, "$"))
     } else {
       return(paste0("^", name, rpt, "$"))
     }

@@ -14,7 +14,7 @@ cto_get_data(
 )
 }
 \arguments{
-\item{req}{A \code{httr2} request object initialized via
+\item{req}{A \code{httr2_request} object initialized via
 \code{\link{cto_request}()}.}
 
 \item{form_id}{A character string specifying the unique ID of the form.}

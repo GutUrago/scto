@@ -6,7 +6,7 @@
 #' encrypted forms via a private key and offers an automated "tidy" mode that
 #' cleans column types based on the XLSForm definition.
 #'
-#' @param req A \code{httr2} request object initialized via
+#' @param req A `httr2_request` object initialized via
 #' \code{\link{cto_request}()}.
 #' @param form_id A character string specifying the unique ID of the form.
 #' @param private_key An optional path to a `.pem` private key file. Required
@@ -59,12 +59,14 @@
 #'   tidy = TRUE
 #' )
 #' }
-cto_get_data <- function(req,
-                     form_id,
-                     private_key = NULL,
-                     start_date = as.POSIXct("2000-01-01"),
-                     status = c("approved", "rejected", "pending"),
-                     tidy = TRUE) {
+cto_get_data <- function(
+    req,
+    form_id,
+    private_key = NULL,
+    start_date = as.POSIXct("2000-01-01"),
+    status = c("approved", "rejected", "pending"),
+    tidy = TRUE
+    ) {
 
   verbose <- isTRUE(getOption("scto.verbose", default = TRUE))
   if (verbose) cli::cli_progress_step("Preparing to download...", spinner = TRUE)
@@ -78,7 +80,7 @@ cto_get_data <- function(req,
   status <- match.arg(status, several.ok = TRUE)
   start_date <- as.numeric(start_date)
 
-  url_path <- stringr::str_glue("api/v2/forms/data/wide/json/{form_id}?date={start_date}")
+  url_path <- glue("api/v2/forms/data/wide/json/{form_id}?date={start_date}")
 
   req_data <- req |>
     cto_url_path_append(url_path) |>
@@ -99,7 +101,7 @@ cto_get_data <- function(req,
 
   if (verbose) cli::cli_progress_step("Tidying the data...", spinner = TRUE)
 
-  form <- cto_get_form(req, form_id)
+  form <- cto_get_form_definitions(req, form_id)
 
   survey <- form$survey |>
     dplyr::mutate(
@@ -128,7 +130,10 @@ cto_get_data <- function(req,
       regex_varname  = purrr::pmap_chr(
         list(.data$name, .data$repeat_level, .data$is_slt_multi),
         \(n, r, m) gen_regex_varname(n, r, m)
-      )
+      ),
+      regex_varname  = ifelse(grepl("^begin repeat", .data$type, TRUE),
+                              paste0("^", .data$regex_varname, "_count", "$"),
+                              .data$regex_varname)
     )
 
   cs_dates <- c("CompletionDate", "SubmissionDate")
@@ -155,6 +160,7 @@ cto_get_data <- function(req,
       dplyr::across(dplyr::matches(datetime_fields), ~as.POSIXct(.x, format = "%B %d, %Y %I:%M:%S %p")),
       dplyr::across(dplyr::matches(media_fields), ~ifelse(grepl("^https", .x, TRUE), basename(.x), .x))
     )
+  # Handle geopoints here
   if (verbose) cli::cli_progress_done("Tidying complete!")
   tidy_data
 }

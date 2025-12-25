@@ -4,7 +4,12 @@
 \alias{cto_request}
 \title{Create an Authenticated SurveyCTO Request Object}
 \usage{
-cto_request(servername, username, password, read_lines)
+cto_request(
+  servername = NULL,
+  username = NULL,
+  password = NULL,
+  read_lines = NULL
+)
 }
 \arguments{
 \item{servername}{String. The name of your SurveyCTO server (the subdomain).

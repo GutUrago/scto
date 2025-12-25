@@ -55,6 +55,8 @@
 #'
 #' @seealso \code{\link[usethis]{edit_r_environ}()}, \code{\link{Sys.setenv}()}
 #'
+#' @importFrom glue glue
+#'
 #' @examples
 #' \dontrun{
 #' # Direct authentication
@@ -78,12 +80,17 @@
 #' username = Sys.getenv("SCTO_USER"),
 #' password = Sys.getenv("SCTO_PASS"))
 #' }
-cto_request <- function(servername, username, password, read_lines) {
+cto_request <- function(
+    servername = NULL,
+    username = NULL,
+    password = NULL,
+    read_lines = NULL
+    ) {
 
   verbose <- isTRUE(getOption("scto.verbose", default = TRUE))
   if (verbose) cli::cli_progress_step("Preparing to authenticate...", spinner = TRUE)
 
-  if (missing(servername) || missing(username) || missing(password)) {
+  if (is.null(servername) || is.null(username) || is.null(password)) {
     checkmate::assert_file_exists(read_lines, access = "r")
     creds <- readLines(read_lines, warn = FALSE)
 
@@ -107,7 +114,7 @@ cto_request <- function(servername, username, password, read_lines) {
 
   if (verbose) cli::cli_progress_step("Authenticating with {.field {servername}}...", spinner = TRUE)
 
-  req <- stringr::str_glue("https://{servername}.surveycto.com") |>
+  req <- glue("https://{servername}.surveycto.com") |>
     httr2::request() |>
     httr2::req_error(is_error = \(resp) FALSE) |>
     httr2::req_auth_basic(username, password) |>
