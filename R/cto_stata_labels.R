@@ -230,7 +230,7 @@ cto_stata_labels <- function(
           paste(
             glue("cap label variable {.data$name} \"{.data$var_label}\""),
             glue("cap note variable {.data$name} \"{.data$var_note}\""),
-            glue("cap label values {.data$name} \"{.data$list_name}\""),
+            glue("cap label values {.data$name} {.data$list_name}"),
             sep = "\n"
           ),
 
