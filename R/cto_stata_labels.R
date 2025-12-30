@@ -201,14 +201,16 @@ cto_stata_labels <- function(req, form_id, path = NULL, overwrite = TRUE) {
 
       stata_cmd = dplyr::case_when(
         .data$is_slt_multi ~ purrr::pmap_chr(
-          list(.data$regex_varname, .data$list_multi, .data$var_label, .data$var_note, .data$repeat_level),
-          function(n, l, v, vn, r) {
+          list(.data$regex_varname, .data$list_multi, .data$var_label,
+               .data$var_note, .data$repeat_level, .data$name),
+          function(n, l, v, vn, r, ln) {
 
             cmd <- str_c(
               "cap {\n",
-              "\tunab vars : ", n, "*\n",
+              "\tunab vars : ", ln, "*\n",
               "\tforeach var of local vars {\n",
               "\t\tif regexm(\"`var'\", \"", n, "\") {\n",
+              "\t\tif regexm(\"`var'\", \"", v, "\") {\n",
               "\t\t\tcap note `var': \"", vn, "\"\n",
               "\t\t\tcap label values `var' slt_multi_binary\n"
             )
