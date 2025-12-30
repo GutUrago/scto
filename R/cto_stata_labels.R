@@ -206,14 +206,31 @@ cto_stata_labels <- function(req, form_id, path = NULL, overwrite = TRUE) {
       )
     )
 
-
-
   do_file_content <- c(
     do_file_content,
     paste0("*", center_text(" VARIABLE LABELS ", "-"), "*"),
     "",
     labels_set[["stata_cmd"]],
     "", ""
+  )
+
+  defaults <- c(
+    'cap replace KEY = instanceID if KEY==""',
+    'cap drop instanceID',
+    'cap label variable KEY "Unique submission ID"',
+    'cap label variable SubmissionDate "Date/time submitted"',
+    'cap label variable CompletionDate "Date/time review completed',
+    'cap label variable formdef_version "Form version used on device"',
+    'cap label variable review_status "Review status"',
+    'cap label variable review_comments "Comments made during review"',
+    'cap label variable review_corrections "Corrections made during review"'
+  )
+
+  do_file_content <- c(
+    do_file_content,
+    paste0("*", center_text(" DEFAULTS FIELDS ", "-"), "*"),
+    defaults, "", "",
+    paste0("*", center_text(" THE END! ", "-"), "*"),
   )
 
   if (!is.null(path)) {

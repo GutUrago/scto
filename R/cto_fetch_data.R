@@ -177,7 +177,6 @@ cto_fetch_data <- function(
     )
   }
 
-
   if (length(gps_fields) > 0) {
     nms <- names(tidy_data)
     suffix <- c("latitude", "longitude", "altitude", "accuracy")

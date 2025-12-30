@@ -121,21 +121,34 @@ cto_fetch_attachment <- function(
   }
   paths <- file.path(path, basename(urls))
 
-  prog_label <- ifelse(verbose, "Downloading attachments", FALSE)
+  n_total <- length(urls)
+
+  if (verbose) {
+    pb <- list(
+      type = "download",
+      format = "Downloading {cli::pb_current}/{cli::pb_total} ({cli::ansi_trimws(cli::pb_percent)}) | {cli::ansi_trimws(cli::pb_rate_bytes)} ETA: {cli::pb_eta}"
+    )
+  } else pb <- FALSE
 
   purrr::walk2(
     urls,
     paths,
     .f = \(u, p) {
+
       if (!file.exists(p)) {
-        tryCatch({
-          req_perform(req_url(req, u), path = p)
-        }, error = function(e) {
-          cli::cli_alert_warning("Failed to download: {basename(u)}")
-        })
+        tryCatch(
+          {
+            req_perform(req_url(req, u), path = p)
+          },
+          error = function(e) {
+            cli::cli_alert_warning("Failed to download: {basename(u)}")
+          }
+        )
       }
     },
-    .progress = prog_label
+    .progress = pb
   )
+
+
   if (verbose) cli_progress_step("Downloading compelete!")
 }

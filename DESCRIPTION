@@ -14,8 +14,8 @@ Authors@R: c(
 Description: An R client for the 'SurveyCTO' REST API that provides a modern, 
     consistent interface for programmatically accessing server resources. 
     Built on top of the 'httr2' package, it enables secure and efficient retrieval 
-    of tidy, analysis-ready data. In addition, it generates clean variable and 
-    value labels for Stata users. The package includes functions to download 
+    of data and tidying to return analysis-ready data. In addition, it generates clean variable and 
+    value labels for 'Stata' users. The package includes functions to download 
     form metadata, form definitions, attachments, and associated media files. 
     It emphasizes robust authentication and request handling, making it 
     suitable for automated survey monitoring and downstream analysis.
