@@ -8,6 +8,18 @@
 NULL
 
 
+# Confirm Form ID ----
+cto_form_ids <- function(req, team_id = NULL) {
+  verbose <- isTRUE(getOption("scto.verbose", default = TRUE))
+  assert_class(req, c("httr2_request", "scto_request"))
+  if (!is.null(team_id)) assert_character(team_id)
+  endpoint <- req |>
+    req_url_path("/api/v2/forms/ids")
+  if (!is.null(team_id)) endpoint <- req_url_query(endpoint, teamId = team_id)
+  req_perform(endpoint) |>
+    resp_body_json(simplifyVector = TRUE)
+}
+
 
 
 # Center text -----
