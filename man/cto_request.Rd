@@ -8,8 +8,7 @@ cto_request(server, username, password = NULL)
 }
 \arguments{
 \item{server}{String. The name of your SurveyCTO server (the subdomain).
-For example, if your URL is \code{https://example.surveycto.com},
-use \code{"example"}.}
+For example, if your URL is \verb{https://example.surveycto.com}, use \code{"example"}.}
 
 \item{username}{String. The username/email for a user account.}
 
@@ -20,37 +19,23 @@ will prompt you for it interactively. If needed for automation purposes,
 it's recommended to always use the environment variables.}
 }
 \value{
-An authenticated \code{httr2_request} object. The endpoint can be
-modified using \code{\link[httr2]{req_url_path}()}, \code{\link[httr2]{req_url_query}()},
-and others.
+A modified and authenticated \code{httr2_request} object.
 }
 \description{
 Initializes a \code{httr2} request object with the necessary server URL and
 Basic Authentication credentials.
 }
 \details{
-The function uses the \code{scto.verbose} option to control console
-feedback. By default, it informs the user when authentication starts
-and succeeds. You can silence this by setting \code{options(scto.verbose = FALSE)}.
+All functions in this package use \code{scto.verbose} option to control console
+feedback. By default, it informs the user which process has started
+and completed. You can silence this by setting \code{options(scto.verbose = FALSE)}.
 }
-\section{Security & Credential Management}{
-
-For maximum security and workflow flexibility, it is highly recommended to
-store your credentials as environment variables in your \code{.Renviron} file.
-This allows you to call the function by passing the environment variables
-directly to the arguments—see examples below. If using interactively, it's
-recommended to leave \code{password = NULL} and input it when the system prompts.
-
-The object returned by this function is a standard \code{httr2} request, which is designed
-to comply with high-level secret management standards.
-}
-
 \examples{
 \dontrun{
-# Direct authentication
+# Direct authentication (Not Recommended)
 req <- cto_request("my-org", "user@org.com", "pw")
 
-# Input password when prompted
+# Input password when prompted (Interactively)
 req <- cto_request("my-org", "user@org.com")
 
 # Using environment variables for enhanced security (Recommended)
@@ -58,5 +43,5 @@ req <- cto_request("my-org", Sys.getenv("USER"), Sys.getenv("PASS"))
 }
 }
 \seealso{
-\code{\link[httr2]{req_auth_basic}()}, \code{\link[usethis]{edit_r_environ}()}, \code{\link{Sys.setenv}()}
+\code{\link[httr2:req_auth_basic]{httr2::req_auth_basic()}}, \code{\link[usethis:edit]{usethis::edit_r_environ()}}, \code{\link[=Sys.setenv]{Sys.setenv()}}
 }

@@ -7,8 +7,7 @@
 cto_form_dofile(req, form_id, path = NULL)
 }
 \arguments{
-\item{req}{A \code{httr2_request} object initialized via
-\code{\link{cto_request}()}.}
+\item{req}{A \code{httr2_request} object initialized via \code{\link[=cto_request]{cto_request()}}.}
 
 \item{form_id}{Character string. The unique ID of the SurveyCTO form.}
 

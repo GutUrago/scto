@@ -9,8 +9,7 @@
 #' XLSForm structure from SurveyCTO, handles multi-language forms, and
 #' accounts for complex structures like repeat groups and select-multiple fields.
 #'
-#' @param req A `httr2_request` object initialized via
-#' \code{\link{cto_request}()}.
+#' @param req A `httr2_request` object initialized via [cto_request()].
 #' @param form_id Character string. The unique ID of the SurveyCTO form.
 #' @param path Character (optional). The file path where the resulting `.do`
 #' file should be saved. Must end in `.do`.
@@ -45,7 +44,7 @@ cto_form_dofile <- function(req, form_id, path = NULL) {
 
   verbose <- isTRUE(getOption("scto.verbose", default = TRUE))
 
-  if (!is.null(path)) checkmate::assert_path_for_output(path, TRUE, "do")
+  assert_arg(path, "character", "path", 1, TRUE)
   form <- cto_form_definition(req, form_id)
 
   if (verbose) cli_progress_step("Writing Stata do-file...")
@@ -271,7 +270,7 @@ cto_form_dofile <- function(req, form_id, path = NULL) {
     "",
     labels_set[["stata_cmd"]],
     "", "",
-    paste0("*", center_text(" DEFAULTS FIELDS ", "-"), "*"),
+    paste0("*", center_text(" DEFAULT FIELDS ", "-"), "*"),
     "",
     c(
       'cap replace KEY = instanceID if KEY==""',

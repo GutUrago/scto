@@ -2,7 +2,7 @@ Package: scto
 Type: Package
 Title: Modern Data Pipelines for 'SurveyCTO'
 Version: 0.0.0.9000
-Date: 2025-12-31
+Date: 2026-01-09
 Authors@R: c(
     person(
       "Gutama Girja", "Urago",
@@ -11,13 +11,13 @@ Authors@R: c(
       comment = c(ORCID = "0000-0001-5588-2301")
     )
   )
-Description: An R client for the 'SurveyCTO' REST API, a mobile and offline data 
-    collection platform, providing a modern and consistent interface for 
+Description: An R client for the 'SurveyCTO' REST API <https://developer.surveycto.com/>, 
+    a mobile and offline data collection platform, providing a modern and consistent interface for 
     programmatic access to server resources. Built on top of the 'httr2' package, 
     it enables secure and efficient data retrieval and returns analysis-ready 
     outputs through optional tidying. The package also generates clean variable 
     and value labels compatible with 'Stata'. Additional functionality includes 
-    downloading metadata, form definitions, and associated attachments. 
+    downloading server datasets, form metadata and definitions, and associated attachments. 
     Robust authentication and request handling make the package suitable for 
     automated survey monitoring and downstream analysis.
 License: MIT + file LICENSE
@@ -26,18 +26,17 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Imports: 
-    checkmate,
     cli,
-    curl,
     dplyr,
     httr2,
-    openxlsx2,
     purrr,
     readr,
+    readxl,
     rlang,
     stringr,
     tidyr
 Suggests: 
+    curl,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 URL: https://github.com/guturago/scto

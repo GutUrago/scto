@@ -6,7 +6,7 @@
 #' encrypted forms via a private key and offers an automated "tidy" mode that
 #' cleans column types based on the XLSForm definition.
 #'
-#' @param req A `httr2_request` object initialized via \code{\link{cto_request}()}.
+#' @param req A `httr2_request` object initialized via [cto_request()].
 #' @param form_id String. The unique ID of the SurveyCTO form.
 #' @param private_key An optional path to a `.pem` private key file. Required
 #'   if the form is encrypted.
@@ -45,7 +45,7 @@
 #'
 #' @export
 #'
-#' @seealso [cto_request()], [cto_fetch_attachment()], [cto_form_dataset()]
+#' @seealso [cto_request()], [cto_form_attachment()]
 #'
 #'
 #' @examples
@@ -54,12 +54,12 @@
 #' req <- cto_request("my_server", "user", "pass")
 #'
 #' # Download raw data
-#' raw <- cto_fetch_data(req, "my_form_id")
+#' raw <- cto_form_data(req, "my_form_id")
 #'
 #' # Download and tidy encrypted data
-#' clean <- cto_fetch_data(req, "my_form_id", "keys/my_key.pem")
+#' clean <- cto_form_data(req, "my_form_id", "keys/my_key.pem")
 #' }
-cto_fetch_data <- function(
+cto_form_data <- function(
     req,
     form_id,
     private_key = NULL,
@@ -70,39 +70,35 @@ cto_fetch_data <- function(
 
   verbose <- isTRUE(getOption("scto.verbose", default = TRUE))
 
-  assert_class(req, c("httr2_request", "scto_request"))
-  if (!is.null(start_date)) assert_class(start_date, "POSIXct")
-  assert_character(status, min.len = 1, max.len = 3)
-  if (!is.null(private_key)) checkmate::assert_file(private_key, "r", "pem")
-  assert_flag(tidy)
-
-  if (verbose) cli_progress_step("Preparing data download...")
+  assert_arg(req, c("httr2_request", "scto_request"), "req")
+  assert_arg(form_id, "character", "form_id", 1)
+  assert_arg(private_key, "character", "private_key", 1, TRUE)
+  if (!is.null(private_key) & !file.exists(private_key)) {
+    cli_abort("No file found at {.file {private_key}}")
+  }
+  assert_arg(start_date, "POSIXct", "start_date", 1)
+  assert_arg(status, "character", "status", 1)
+  assert_arg(tidy, "logical", "tidy", 1)
 
   status <- match.arg(status, several.ok = TRUE)
   start_date <- as.numeric(start_date)
 
-  url_path <- str_glue("api/v2/forms/data/wide/json/{form_id}?date={start_date}")
-
-  req_data <- req |>
-    req_url_path(url_path) |>
-    req_url_query(r = status, .multi = "pipe")
+  url_path <- str_glue("api/v2/forms/data/wide/json/{form_id}")
+  req_data <- req_url_query(req, date = start_date, r = status, .multi = "pipe")
 
   if (!is.null(private_key)) {
     req_data <- httr2::req_body_multipart(req_data, private_key = curl::form_file(private_key))
   }
 
-  if (verbose) cli_progress_step("Downloading data...")
+  if (verbose) cli_progress_step("Fetching {.val {form_id}} data")
 
-  raw_data <- req_perform(req_data) |>
-    resp_body_json(simplifyVector = TRUE, flatten = TRUE)
-
-  if (verbose) cli_progress_step("Downloading complete!")
+  raw_data <- fetch_api_response(req_data, url_path)
 
   if (length(raw_data) == 0) return(data.frame())
 
   if (!tidy) return(raw_data)
 
-  if (verbose) cli_progress_step("Tidying data...")
+  if (verbose) cli_progress_step("Tidying {.val {form_id}} data")
 
   form <- cto_form_definition(req, form_id)
 
@@ -203,7 +199,6 @@ cto_fetch_data <- function(
     tidy_data, across(is.character, readr::parse_guess)
   )
 
-  if (verbose) cli_progress_step("Tidying complete!")
   return(tidy_data)
 }
 
