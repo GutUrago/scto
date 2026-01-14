@@ -70,15 +70,11 @@ cto_form_data <- function(
 
   verbose <- isTRUE(getOption("scto.verbose", default = TRUE))
 
-  assert_arg(req, c("httr2_request", "scto_request"), "req")
-  assert_arg(form_id, "character", "form_id", 1)
-  assert_arg(private_key, "character", "private_key", 1, TRUE)
-  if (!is.null(private_key) & !file.exists(private_key)) {
-    cli_abort("No file found at {.file {private_key}}")
-  }
-  assert_arg(start_date, "POSIXct", "start_date", 1)
-  assert_arg(status, "character", "status", 1)
-  assert_arg(tidy, "logical", "tidy", 1)
+  checkmate::assert_class(req, c("httr2_request", "scto_request"))
+  checkmate::assert_string(form_id)
+  if (!is.null(private_key)) checkmate::assert_file_exists(private_key, "r", "pem")
+  checkmate::assert_class(start_date, "POSIXct")
+  checkmate::assert_flag(tidy)
 
   status <- match.arg(status, several.ok = TRUE)
   start_date <- as.numeric(start_date)
@@ -91,7 +87,6 @@ cto_form_data <- function(
   }
 
   if (verbose) cli_progress_step("Fetching {.val {form_id}} data")
-
   raw_data <- fetch_api_response(req_data, url_path)
 
   if (length(raw_data) == 0) return(data.frame())
@@ -99,7 +94,6 @@ cto_form_data <- function(
   if (!tidy) return(raw_data)
 
   if (verbose) cli_progress_step("Tidying {.val {form_id}} data")
-
   form <- cto_form_definition(req, form_id)
 
   survey <- form$survey |>

@@ -46,8 +46,8 @@
 #' head(forms_df)
 #' }
 cto_form_ids <- function(req) {
-  verbose <- isTRUE(getOption("scto.verbose", default = TRUE))
-  assert_arg(req, c("httr2_request", "scto_request"), "req")
+  verbose <- isTRUE(getOption("scto.verbose", TRUE))
+  checkmate::assert_class(req, c("httr2_request", "scto_request"))
   if (verbose) cli_progress_step("Checking available forms IDs on {.field {req$server}}")
   url_path <- "api/v2/forms/ids"
   fetch_api_response(req, url_path)
@@ -56,9 +56,9 @@ cto_form_ids <- function(req) {
 #' @export
 #' @rdname cto_form_ids
 cto_metadata <- function(req, which = c("all", "datasets", "forms", "groups")) {
-  verbose <- isTRUE(getOption("scto.verbose", default = TRUE))
+  verbose <- isTRUE(getOption("scto.verbose", TRUE))
   which <- match.arg(which)
-  assert_arg(req, c("httr2_request", "scto_request"), "req")
+  checkmate::assert_class(req, c("httr2_request", "scto_request"))
   if (verbose) cli_progress_step("Reading metadata from {.field {req$server}}")
   url_path <- "console/forms-groups-datasets/get"
   metadata <- fetch_api_response(req, url_path)

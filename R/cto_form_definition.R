@@ -66,11 +66,14 @@
 #' }
 cto_form_metadata <- function(req, form_id) {
   verbose <- isTRUE(getOption("scto.verbose", default = TRUE))
-  assert_arg(req, c("httr2_request", "scto_request"), "req")
-  assert_arg(form_id, "character", "form_id", 1)
-  unix_ms <- as.numeric(Sys.time()) * 1000
+
+  checkmate::assert_class(req, c("httr2_request", "scto_request"))
+  checkmate::assert_string(form_id)
+
+  t <- as.numeric(Sys.time()) * 1000
   url_path <- str_glue("forms/{form_id}/files")
-  req <- req_url_query(req, t = unix_ms)
+  req <- req_url_query(req, t = t)
+
   if (verbose) cli_progress_step("Reading {.val {form_id}} metadata")
   fetch_api_response(req, url_path)
 }
@@ -82,16 +85,17 @@ cto_form_definition <- function(req, form_id, version = NULL, load = TRUE,
                                 dir = tempdir(), overwrite = FALSE) {
   verbose <- isTRUE(getOption("scto.verbose", default = TRUE))
 
-  assert_arg(version, "character", "version", 1, TRUE)
-  assert_arg(dir, "character", "dir", 1)
-  assert_arg(overwrite, "logical", "overwrite", 1)
-  assert_arg(load, "logical", "load", 1)
-  if (!dir.exists(dir)) dir.create(dir)
+  checkmate::assert_class(req, c("httr2_request", "scto_request"))
+  checkmate::assert_string(form_id)
+  checkmate::assert_string(version, null.ok = TRUE)
+  checkmate::assert_flag(load)
+  checkmate::assert_directory(dir)
+  checkmate::assert_flag(overwrite)
 
   metadata <- cto_form_metadata(req, form_id)
   df_versions <- dplyr::bind_rows(
-    pluck(metadata, "deployedGroupFiles", "definitionFile"),
-    pluck(metadata, "previousDefinitionFiles")
+    purrr::pluck(metadata, "deployedGroupFiles", "definitionFile"),
+    purrr::pluck(metadata, "previousDefinitionFiles")
     )
 
   if (!is.null(version)) {
@@ -115,6 +119,7 @@ cto_form_definition <- function(req, form_id, version = NULL, load = TRUE,
   }
 
   if (load && file.exists(filename)) {
+    if (verbose) cli_progress_step("Loading form definition into memory")
     sheets <- c("survey", "choices", "settings")
     form_out <- purrr::map(sheets, ~readxl::read_excel(filename, .x, .name_repair = "minimal"))
     names(form_out) <- sheets

@@ -2,7 +2,7 @@ Package: scto
 Type: Package
 Title: Modern Data Pipelines for 'SurveyCTO'
 Version: 0.0.0.9000
-Date: 2026-01-09
+Date: 2026-01-13
 Authors@R: c(
     person(
       "Gutama Girja", "Urago",
@@ -26,6 +26,7 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Imports: 
+    checkmate,
     cli,
     dplyr,
     httr2,

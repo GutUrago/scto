@@ -5,73 +5,25 @@
 #' @importFrom rlang `:=` .data
 #' @importFrom dplyr mutate select across
 #' @importFrom tidyr matches all_of any_of everything
-#' @importFrom purrr map pluck
 NULL
 
-# Assertion ----
-assert_arg <- function(x, cls, nm, len = NULL, null_ok = FALSE, na_ok = FALSE) {
-  if (is.null(x)) {
-    if (null_ok) return(invisible(TRUE))
-    cli::cli_abort("{.arg {nm}} must not be {.val NULL}.")
-  }
 
-  if (!na_ok && anyNA(x)) {
-    cli::cli_abort("{.arg {nm}} must not contain {.val NA}.")
-  }
-
-  if (!inherits(x, cls)) {
-    cli::cli_abort(
-      "{.arg {nm}} must be an object of class {.cls {cls}}, not {.cls {class(x)}}."
-    )
-  }
-
-  if (!is.null(len) && length(x) != len) {
-    cli::cli_abort(
-      "{.arg {nm}} must have length {.val {len}}, not {.val {length(x)}}."
-    )
-  }
-
-  invisible(TRUE)
-}
 
 # Fetch API response ----
 fetch_api_response <- function(req, url_path = NULL, file_path = NULL) {
   if (!is.null(url_path)) {
     req <- req_url_path(req, url_path)
   }
-  resp <- req_perform(req)
-  httr2::resp_check_status(resp)
-  if (!is.null(file_path)) {
-    bin <- httr2::resp_body_raw(resp)
-    if (length(bin) == 0) {
-      cli::cli_abort("Empty response body when downloading {.val {basename(file_path)}}")
-    }
-    writeBin(bin, file_path)
-    return(invisible(file_path))
+  if (is.null(file_path)) {
+    req_perform(req) |>
+      resp_body_json(
+        simplifyVector = TRUE,
+        flatten = TRUE
+      )
   } else {
-    resp_body_json(
-      resp,
-      simplifyVector = TRUE,
-      flatten = TRUE
-    )
+    req_perform(req, file_path)
   }
 }
-
-
-# Download progress bar ----
-download_pb <- list(
-  type  = "download",
-  clear = FALSE,
-  format = paste0(
-    "Downloading {cli::pb_current}/{cli::pb_total} ",
-    "({cli::ansi_trimws(cli::pb_percent)}) | ETA: {cli::pb_eta}"
-  ),
-  format_done = paste0(
-    "{cli::col_green(cli::symbol$tick)} ",
-    "Downloaded {.val {cli::pb_total}} file{?s} ",
-    "{cli::col_grey(paste0('[', cli::pb_elapsed, ']'))}"
-  )
-)
 
 
 # Map and return the simplest object ----
@@ -84,7 +36,7 @@ map_maybe_list <- function(.x, .f, ..., .names = NULL) {
 
 # Center text -----
 center_text <- function(text, fill = " ", width = 78) {
-  assert_arg(fill, "character", "fill", 1)
+  checkmate::assert_string(fill)
   if (nchar(text) < width) {
     padding_total <- width - nchar(text)
     left_pad  <- floor(padding_total / 2)
@@ -93,7 +45,7 @@ center_text <- function(text, fill = " ", width = 78) {
   } else text
 }
 
-# Helper ----
+# Generate regex variable name ----
 gen_regex_varname <- function(name, rpt_lvl, multi, mp = "_*[0-9]+") {
   if (rpt_lvl == 0) {
     if (multi) {

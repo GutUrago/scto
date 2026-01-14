@@ -40,8 +40,6 @@ by setting \code{load = FALSE}.
 This function first retrieves the list of available server datasets.
 If \code{ids} is provided, it validates them against this list.
 \itemize{
-\item \strong{Progress Reporting}: When \code{options(scto.verbose = TRUE)} (default),
-a progress bar is displayed during download.
 \item \strong{Skipping}: If \code{overwrite = FALSE}, files that already exist in \code{dir}
 are skipped to save bandwidth.
 \item \strong{Failures}: If a specific dataset fails to download, a warning is issued,

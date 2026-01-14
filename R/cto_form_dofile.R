@@ -44,10 +44,14 @@ cto_form_dofile <- function(req, form_id, path = NULL) {
 
   verbose <- isTRUE(getOption("scto.verbose", default = TRUE))
 
-  assert_arg(path, "character", "path", 1, TRUE)
+  if (!is.null(path)) checkmate::assert_path_for_output(path, TRUE, "do")
   form <- cto_form_definition(req, form_id)
 
-  if (verbose) cli_progress_step("Writing Stata do-file...")
+  if (!is.null(path)) {
+    cli_progress_step("Writing {.val {form_id}} Stata do-file to {.file {path}}")
+  } else {
+    cli_progress_step("Writing {.val {form_id}} Stata do-file")
+  }
 
   # --- 1. Header Generation ---
   ts <- format(Sys.time(), format = '%b %d, %Y at %H:%M %Z')
@@ -287,12 +291,6 @@ cto_form_dofile <- function(req, form_id, path = NULL) {
     paste0("*", center_text(" THE END! ", "-"), "*")
   )
 
-  if (verbose & !is.null(path)) {
-    writeLines(do_file_content, path)
-    cli::cli_alert_success("Stata labels written to {.file {path}}")
-  } else {
-    cli::cli_alert_success("Stata labels are ready!")
-  }
-
+  if (!is.null(path)) writeLines(do_file_content, path)
   return(invisible(do_file_content))
 }

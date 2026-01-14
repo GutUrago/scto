@@ -72,14 +72,14 @@ cto_form_attachment <- function(req, form_id, filename = NULL, load = TRUE,
                                 dir = tempdir(), overwrite = FALSE) {
   verbose <- isTRUE(getOption("scto.verbose", default = TRUE))
 
-  assert_arg(filename, "character", "filename", NULL, TRUE)
-  assert_arg(dir, "character", "dir", 1)
-  assert_arg(overwrite, "logical", "overwrite", 1)
-  assert_arg(load, "logical", "load", 1)
-  if (!dir.exists(dir)) dir.create(dir)
+  checkmate::assert_character(filename, null.ok = TRUE)
+  checkmate::assert_flag(load)
+  checkmate::assert_directory(dir)
+  checkmate::assert_flag(overwrite)
 
+  if (verbose) cli_progress_step("Checking available attachments")
   metadata <- cto_form_metadata(req, form_id)
-  media_files <- pluck(metadata, "deployedGroupFiles", "mediaFiles")
+  media_files <- purrr::pluck(metadata, "deployedGroupFiles", "mediaFiles")
   if (length(media_files) == 0) {
     cli_warn("No attachments found for {.val {form_id}}")
     return(invisible())
@@ -95,7 +95,7 @@ cto_form_attachment <- function(req, form_id, filename = NULL, load = TRUE,
 
   paths_all <- file.path(dir, files)
   to_download <- if (overwrite) rep(TRUE, length(files)) else !file.exists(paths_all)
-  urls <- purrr::map_chr(files, ~pluck(media_files, .x, "downloadLink"))
+  urls <- purrr::map_chr(files, ~purrr::pluck(media_files, .x, "downloadLink"))
   urls_to_fetch <- urls[to_download]
   paths_to_fetch <- paths_all[to_download]
 
@@ -104,27 +104,36 @@ cto_form_attachment <- function(req, form_id, filename = NULL, load = TRUE,
   }
 
   if (sum(to_download) > 0) {
-    pb <- if (verbose) download_pb else FALSE
-    purrr::walk2(
-      urls_to_fetch, paths_to_fetch, \(url, path) {
-        tryCatch(
-          fetch_api_response(req_url(req, url), NULL, path),
-          error = \(e) cli_warn("Downloading {.val {basename(path)}} failed: {conditionMessage(e)}")
-        )
-      },
-      .progress = pb
-    )
+    if (verbose) cli_progress_step("Downloading {.val {sum(to_download)}} attachment{?s}")
+    reqs <- purrr::map(urls_to_fetch, ~req_url(req, .x))
+    httr2::req_perform_parallel(reqs, paths_to_fetch, "continue")
   }
 
-  csv <- paths_all[grepl("\\.csv", paths_all)]
-  ok <- file.exists(csv)
-  if (load && sum(ok) > 0) {
-    csv <- csv[ok]
-    nms <- stringr::str_remove(basename(csv), "\\.csv")
+  if (load) {
+    csv <- paths_all[grepl("\\.csv", paths_all)]
+    ok <- file.exists(paths_all)
+    files_to_load <- csv[ok]
+    ids_loaded <- csv[ok]
 
-    map_maybe_list(
-      .x = csv, .names = nms,
-      .f = ~suppressWarnings(readr::read_csv(.x, show_col_types = FALSE))
+    if (length(files_to_load) == 0) return(invisible(NULL))
+
+    out <- purrr::map(files_to_load, function(fp) {
+      tryCatch(
+        readr::read_csv(fp, show_col_types = FALSE),
+        error = function(e) {
+          cli_warn("Failed to read {.file {basename(fp)}}: {e$message}")
+          return(NULL)
+        }
       )
-    } else paths_all[file.exists(paths_all)]
+    }) |>
+      purrr::set_names(ids_loaded)
+
+    ok <- sum(!sapply(out, is.null))
+    if (verbose) cli_progress_step("Loading {.val {ok}} dataset{?s} into memory")
+    out <- out[!sapply(out, is.null)]
+
+    return(out)
+  } else {
+    return(paths_all)
+    }
   }

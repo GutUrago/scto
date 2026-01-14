@@ -7,41 +7,50 @@
 cto_request(server, username, password = NULL)
 }
 \arguments{
-\item{server}{String. The name of your SurveyCTO server (the subdomain).
-For example, if your URL is \verb{https://example.surveycto.com}, use \code{"example"}.}
+\item{server}{String. The subdomain of your SurveyCTO server.
+For example, if the full URL is \verb{https://my-org.surveycto.com},
+set this to \code{"my-org"}.}
 
-\item{username}{String. The username/email for a user account.}
+\item{username}{String. The username or email address associated with the account.}
 
-\item{password}{String. The password for the specified user. You should avoid
-entering the password directly when calling this function, as it will be
-captured by \code{.Rhistory}. Instead, leave it unset (\code{NULL}) and the default behavior
-will prompt you for it interactively. If needed for automation purposes,
-it's recommended to always use the environment variables.}
+\item{password}{String. The user password. Defaults to \code{NULL}.
+If \code{NULL}, the authentication flow will prompt you for the password
+interactively.}
 }
 \value{
-A modified and authenticated \code{httr2_request} object.
+A \code{httr2_request} object with the additional class \code{scto_request}.
 }
 \description{
-Initializes a \code{httr2} request object with the necessary server URL and
-Basic Authentication credentials.
+Establish a connection to a SurveyCTO server. This function initializes an
+authenticated \code{httr2} request object with the necessary server URL and
+credentials.
 }
 \details{
-All functions in this package use \code{scto.verbose} option to control console
-feedback. By default, it informs the user which process has started
-and completed. You can silence this by setting \code{options(scto.verbose = FALSE)}.
+\subsection{Security Best Practices}{
+
+It is highly recommended to avoid hard-coding passwords in your scripts.
+\itemize{
+\item \strong{Interactive Session:} Leave \code{password = NULL}. You will be prompted to
+enter it securely in the console.
+\item \strong{Automation/Scripts:} Store your credentials in your \code{.Renviron} file
+(e.g., \code{SCTO_PASSWORD}) and retrieve them with \code{Sys.getenv()}.
+}
+}
 }
 \examples{
 \dontrun{
-# Direct authentication (Not Recommended)
-req <- cto_request("my-org", "user@org.com", "pw")
-
-# Input password when prompted (Interactively)
+# 1. Interactive authentication (Recommended for interactive sessions)
+# You will be prompted to enter a password securely.
 req <- cto_request("my-org", "user@org.com")
 
-# Using environment variables for enhanced security (Recommended)
-req <- cto_request("my-org", Sys.getenv("USER"), Sys.getenv("PASS"))
+# 2. Environment variables (Recommended for scripts/automation)
+# Assumes you have set SCTO_PASSWORD in your .Renviron
+req <- cto_request("my-org", "user@org.com", Sys.getenv("SCTO_PASSWORD"))
+
+# 3. Direct authentication (Discouraged for security reasons)
+req <- cto_request("my-org", "user@org.com", "my_secret_password")
 }
 }
 \seealso{
-\code{\link[httr2:req_auth_basic]{httr2::req_auth_basic()}}, \code{\link[usethis:edit]{usethis::edit_r_environ()}}, \code{\link[=Sys.setenv]{Sys.setenv()}}
+\code{\link[httr2:req_auth_basic]{httr2::req_auth_basic()}}, \code{\link[usethis:edit]{usethis::edit_r_environ()}}
 }

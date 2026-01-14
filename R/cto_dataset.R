@@ -22,9 +22,6 @@
 #' @details
 #' This function first retrieves the list of available server datasets.
 #' If `ids` is provided, it validates them against this list.
-#'
-#' - **Progress Reporting**: When `options(scto.verbose = TRUE)` (default),
-#'   a progress bar is displayed during download.
 #' - **Skipping**: If `overwrite = FALSE`, files that already exist in `dir`
 #'   are skipped to save bandwidth.
 #' - **Failures**: If a specific dataset fails to download, a warning is issued,
@@ -59,27 +56,29 @@
 #' cto_dataset(req, ids = "roster", overwrite = TRUE)
 #' }
 cto_dataset <- function(req, ids = NULL, load = TRUE, dir = tempdir(), overwrite = FALSE) {
+  verbose <- isTRUE(getOption("scto.verbose", TRUE))
 
-  verbose <- isTRUE(getOption("scto.verbose", default = TRUE))
-
-  assert_arg(req, c("httr2_request", "scto_request"), "req")
-  assert_arg(ids, "character", "ids", NULL, TRUE)
-  assert_arg(dir, "character", "dir")
-  assert_arg(overwrite, "logical", "overwrite", 1)
-  assert_arg(load, "logical", "load", 1)
+  checkmate::assert_class(req, c("httr2_request", "scto_request"))
+  checkmate::assert_character(ids, null.ok = TRUE)
+  checkmate::assert_logical(load, len = 1, any.missing = FALSE)
+  checkmate::assert_directory(dir)
+  checkmate::assert_logical(overwrite, len = 1, any.missing = FALSE)
   if (!dir.exists(dir)) dir.create(dir)
 
   if (is.null(ids)) {
+
     if (verbose) cli_progress_step("Checking available server datasets on {.field {req$server}}")
-    metadata <- fetch_api_response(req, "console/forms-groups-datasets/get")
-    ids <- pluck(metadata, "datasets", "id")
+
+    metadata <- cto_metadata(req, "datasets")
+    ids <- metadata$id
+
     if (length(ids) == 0) {
       cli_warn("No server datasets found on {.field {req$server}}")
       return(invisible())
       }
   }
 
-  req <- httr2::req_url_query(req, as_attachment = "true")
+  req <- httr2::req_url_query(req, asAttachment = TRUE)
 
   file_names <- paste0(ids, ".csv")
   paths_all  <- file.path(dir, file_names)
@@ -90,26 +89,39 @@ cto_dataset <- function(req, ids = NULL, load = TRUE, dir = tempdir(), overwrite
   paths_to_fetch <- paths_all[to_download]
 
   skipped <- length(ids) - sum(to_download)
-  if (verbose && skipped > 0) cli_inform("Skipping {.val {skipped}} already existing file{?s}")
+  if (skipped > 0) cli_inform("Skipping {.val {skipped}} existing file{?s}")
 
   if (length(paths_to_fetch) > 0) {
-    pb <- if (verbose) download_pb else FALSE
-    purrr::walk2(
-      urls_to_fetch, paths_to_fetch, \(url, path) {
-        tryCatch(
-          fetch_api_response(req, url, path),
-          error = \(e) cli_warn("Downloading {.val {basename(path)}} failed: {conditionMessage(e)}")
-        )
-      },
-      .progress = pb
-    )
+    if (verbose) cli_progress_step("Downloading {.val {length(paths_to_fetch)}} dataset{?s}")
+    reqs <- purrr::map(urls_to_fetch, ~req_url_path(req, .x))
+    httr2::req_perform_sequential(reqs, paths_to_fetch, "continue")
   }
 
-  ok <- file.exists(paths_all)
-  if (load && sum(ok) > 0) {
-    map_maybe_list(
-      .x = paths_all[ok], .names = ids[ok],
-      .f = ~suppressWarnings(readr::read_csv(.x, show_col_types = FALSE))
+  if (load) {
+    ok <- file.exists(paths_all)
+    files_to_load <- paths_all[ok]
+    ids_loaded <- ids[ok]
+
+    if (length(files_to_load) == 0) return(invisible(NULL))
+
+    out <- purrr::map(files_to_load, function(fp) {
+      tryCatch(
+        readr::read_csv(fp, show_col_types = FALSE),
+        error = function(e) {
+          cli_warn("Failed to read {.file {basename(fp)}}: {e$message}")
+          return(NULL)
+        }
       )
-  } else paths_all[ok]
+    }) |>
+      purrr::set_names(ids_loaded)
+
+    ok <- sum(!sapply(out, is.null))
+    if (verbose) cli_progress_step("Loading {.val {ok}} dataset{?s} into memory")
+    out <- out[!sapply(out, is.null)]
+
+    return(out)
+
+  } else {
+    return(paths_all)
+  }
 }
